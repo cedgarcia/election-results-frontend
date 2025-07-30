@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
-// Dynamically import the map component with no SSR
+// DYNAMICALLY IMPORT THE MAP COMPONENT WITH NO SSR
 const PhilippinesMap = dynamic(() => import('../components/PhilippinesMap'), {
   ssr: false,
   loading: () => (
@@ -19,10 +19,10 @@ const PhilippinesMapPage = () => {
 
   const handleAreaClick = (feature: any, bounds: any) => {
     if (feature === null && bounds === null) {
-      // Reset to initial state
+      // RESET TO INITIAL STATE
       setSelectedArea(null);
     } else {
-      // Set the selected area (zoom will be handled internally by the map component)
+      // SET THE SELECTED AREA (ZOOM WILL BE HANDLED INTERNALLY BY THE MAP COMPONENT)
       setSelectedArea(feature);
     }
   };
