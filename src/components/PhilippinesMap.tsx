@@ -1,20 +1,19 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
-import { GeoJSON, MapContainer, TileLayer } from 'react-leaflet';
+import { GeoJSON, MapContainer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { GeoJSON as GeoJSONType } from 'geojson';
-// Fix missing marker icons in Leaflet
-import L from 'leaflet';
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+// Philippines bounding coordinates
+const PH_BOUNDS: [number, number][] = [
+  [5.0, 115.0], // Southwest
+  [21.0, 127.0], // Northeast
+];
+
+// Calculate center point
+const CENTER: [number, number] = [
+  (PH_BOUNDS[0][0] + PH_BOUNDS[1][0]) / 2,
+  (PH_BOUNDS[0][1] + PH_BOUNDS[1][1]) / 2,
+];
 
 type PhilippinesMapProps = {
   level?: number;
@@ -41,38 +40,55 @@ const PhilippinesMap = ({ level = 0 }: PhilippinesMapProps) => {
     fetchGeoData();
   }, [level]);
 
-  // Philippines bounding box coordinates
-  const phBounds: L.LatLngBoundsExpression = [
-    [4.5, 114], // SW corner
-    [21.5, 127], // NE corner
-  ];
-
   return (
-    <div className="relative h-[500px] w-full">
+    <div className="relative h-[500px] w-full bg-white">
       {loading ? (
         <div className="absolute inset-0 flex items-center justify-center">
           Loading map...
         </div>
       ) : (
         <MapContainer
-          bounds={phBounds}
+          center={CENTER}
           zoom={5}
+          minZoom={5}
+          maxBounds={PH_BOUNDS}
+          maxBoundsViscosity={1.0}
           scrollWheelZoom={true}
-          className="z-0 h-full w-full"
+          className="z-0 h-full w-full bg-white"
+          // Disable all map controls
+          attributionControl={false}
+          zoomControl={false}
+          doubleClickZoom={false}
+          boxZoom={false}
+          keyboard={false}
+          dragging={true}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
           {geoData && (
             <GeoJSON
               data={geoData}
               style={() => ({
                 fillColor: '#3388ff',
                 weight: 1,
-                color: '#fff',
-                fillOpacity: 0.5,
+                color: '#0c4da2',
+                fillOpacity: 0.7,
               })}
+              onEachFeature={(feature, layer) => {
+                // Add interactivity
+                layer.on({
+                  mouseover: (e) => {
+                    e.target.setStyle({
+                      fillColor: '#ff7800',
+                      weight: 2,
+                    });
+                  },
+                  mouseout: (e) => {
+                    e.target.setStyle({
+                      fillColor: '#3388ff',
+                      weight: 1,
+                    });
+                  },
+                });
+              }}
             />
           )}
         </MapContainer>
