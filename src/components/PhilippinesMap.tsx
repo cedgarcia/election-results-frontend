@@ -4,7 +4,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { GeoJSON, MapContainer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { GeoJSON as GeoJSONType } from 'geojson';
+import type {
+  Feature,
+  FeatureCollection,
+  GeoJSON as GeoJSONType,
+} from 'geojson';
 import type { Layer, Map as LeafletMap } from 'leaflet';
 
 // Philippines bounding coordinates
@@ -22,6 +26,13 @@ const CENTER: [number, number] = [
 type PhilippinesMapProps = {
   onAreaClick?: (feature: any, bounds: any) => void;
   selectedArea?: any;
+};
+
+// Type guard for FeatureCollection
+const isFeatureCollection = (
+  geojson: GeoJSONType | null
+): geojson is FeatureCollection => {
+  return geojson !== null && geojson.type === 'FeatureCollection';
 };
 
 const PhilippinesMap = ({ onAreaClick, selectedArea }: PhilippinesMapProps) => {
@@ -97,7 +108,8 @@ const PhilippinesMap = ({ onAreaClick, selectedArea }: PhilippinesMapProps) => {
 
         if (foundLayer) {
           try {
-            mapRef.current?.fitBounds(foundLayer.getBounds(), {
+            // FIX 1: Cast foundLayer to any to access getBounds
+            mapRef.current?.fitBounds((foundLayer as any).getBounds(), {
               padding: [40, 40],
               maxZoom: 9,
               animate: true,
@@ -171,17 +183,18 @@ const PhilippinesMap = ({ onAreaClick, selectedArea }: PhilippinesMapProps) => {
       selectedArea.properties?.ADM1_EN;
     if (!selectedAreaName) return null;
 
-    const filteredFeatures = (allData.level2 as any).features.filter(
-      (feature: any) => {
-        // Match based on the parent area name (adjust property names as needed)
-        return (
-          feature.properties?.NAME_1 === selectedAreaName ||
-          feature.properties?.ADM1_EN === selectedAreaName ||
-          feature.properties?.parent === selectedAreaName ||
-          feature.properties?.province === selectedAreaName
-        );
-      }
-    );
+    // Only proceed if level2 data is a FeatureCollection
+    if (!isFeatureCollection(allData.level2)) return null;
+
+    const filteredFeatures = allData.level2.features.filter((feature: any) => {
+      // Match based on the parent area name (adjust property names as needed)
+      return (
+        feature.properties?.NAME_1 === selectedAreaName ||
+        feature.properties?.ADM1_EN === selectedAreaName ||
+        feature.properties?.parent === selectedAreaName ||
+        feature.properties?.province === selectedAreaName
+      );
+    });
 
     if (filteredFeatures.length === 0) {
       // If no exact match, return all level 2 features (fallback)
@@ -216,7 +229,8 @@ const PhilippinesMap = ({ onAreaClick, selectedArea }: PhilippinesMapProps) => {
   const createOnEachFeature =
     (isLevel2 = false) =>
     (feature: any, layer: Layer) => {
-      const currentLayer = layer;
+      // FIX 2: Cast to L.Path to access setStyle method
+      const currentLayer = layer as L.Path;
 
       // Different styles for level 1 and level 2
       const getDefaultStyle = () => {
@@ -265,14 +279,16 @@ const PhilippinesMap = ({ onAreaClick, selectedArea }: PhilippinesMapProps) => {
       currentLayer.setStyle(getDefaultStyle());
 
       const mouseoverHandler = (e: any) => {
-        if (e.target && e.target.setStyle && !isZoomingRef.current) {
+        // FIX 2: Cast target to L.Path
+        const target = e.target as L.Path;
+        if (target && !isZoomingRef.current) {
           try {
             // Don't change style if it's highlighted, just show tooltip
             if (!isFeatureHighlighted(feature)) {
-              e.target.setStyle(hoverStyle);
+              target.setStyle(hoverStyle);
             }
-            if (!e.target.isPopupOpen()) {
-              e.target.openTooltip();
+            if (!target.isPopupOpen()) {
+              target.openTooltip();
             }
           } catch (error) {
             // Ignore styling errors
@@ -281,11 +297,13 @@ const PhilippinesMap = ({ onAreaClick, selectedArea }: PhilippinesMapProps) => {
       };
 
       const mouseoutHandler = (e: any) => {
-        if (e.target && e.target.setStyle && !isZoomingRef.current) {
+        // FIX 2: Cast target to L.Path
+        const target = e.target as L.Path;
+        if (target && !isZoomingRef.current) {
           try {
             // Reset to default style (which includes highlight if applicable)
-            e.target.setStyle(getDefaultStyle());
-            e.target.closeTooltip();
+            target.setStyle(getDefaultStyle());
+            target.closeTooltip();
           } catch (error) {
             // Ignore styling errors
           }
@@ -443,25 +461,26 @@ const PhilippinesMap = ({ onAreaClick, selectedArea }: PhilippinesMapProps) => {
           />
         )}
 
-        {/* Render level 2 data only for selected area - smooth show/hide */}
-        {filteredLevel2Data && filteredLevel2Data.features.length > 0 && (
-          <GeoJSON
-            key={`level2-${selectedArea?.properties?.name || selectedArea?.properties?.NAME_1 || 'selected'}-${highlightedFeature ? JSON.stringify(highlightedFeature.properties) : 'normal'}`}
-            data={filteredLevel2Data}
-            style={(feature) => {
-              const isHighlighted = isFeatureHighlighted(feature);
-              return {
-                fillColor: isHighlighted ? '#74b9ff' : '#ff6b6b',
-                weight: isHighlighted ? 4 : 1,
-                color: isHighlighted ? '#0984e3' : '#d63031',
-                fillOpacity: isHighlighted ? 0.9 : 0.8,
-                cursor: 'pointer',
-                dashArray: isHighlighted ? '0' : '0',
-              };
-            }}
-            onEachFeature={createOnEachFeature(true)}
-          />
-        )}
+        {/* FIX 3: Check if filteredLevel2Data is a FeatureCollection */}
+        {isFeatureCollection(filteredLevel2Data) &&
+          filteredLevel2Data.features.length > 0 && (
+            <GeoJSON
+              key={`level2-${selectedArea?.properties?.name || selectedArea?.properties?.NAME_1 || 'selected'}-${highlightedFeature ? JSON.stringify(highlightedFeature.properties) : 'normal'}`}
+              data={filteredLevel2Data}
+              style={(feature) => {
+                const isHighlighted = isFeatureHighlighted(feature);
+                return {
+                  fillColor: isHighlighted ? '#74b9ff' : '#ff6b6b',
+                  weight: isHighlighted ? 4 : 1,
+                  color: isHighlighted ? '#0984e3' : '#d63031',
+                  fillOpacity: isHighlighted ? 0.9 : 0.8,
+                  cursor: 'pointer',
+                  dashArray: isHighlighted ? '0' : '0',
+                };
+              }}
+              onEachFeature={createOnEachFeature(true)}
+            />
+          )}
       </MapContainer>
 
       {/* Level indicator */}
