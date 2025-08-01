@@ -1,0 +1,34 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies..."
+      - npm install
+
+  pre_build:
+    commands:
+      - echo "Cleaning previous builds..."
+      - npm run clean
+
+  build:
+    commands:
+      - echo "Building application..."
+      - npm run build
+
+  post_build:
+    commands:
+      - echo "Uploading files to S3 (contents of out/ only)..."
+      - aws s3 sync out/. s3://staging-map-visualizer --delete
+      - echo "Deployment done!"
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: out
+
+cache:
+  paths:
+    - 'node_modules/**/*'
