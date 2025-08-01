@@ -32,7 +32,6 @@ const PhilippinesMapPage = () => {
           onAreaClick={handleAreaClick}
           selectedArea={selectedArea}
         />
-        <p>Test Pipeline</p>
       </div>
     </div>
   );
