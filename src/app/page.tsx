@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import type { MapFeature } from '@/types/map';
 
 const PhilippinesMap = dynamic(() => import('@/components/PhilippinesMap'), {
   ssr: false,
@@ -14,9 +15,9 @@ const PhilippinesMap = dynamic(() => import('@/components/PhilippinesMap'), {
 });
 
 const PhilippinesMapPage = () => {
-  const [selectedArea, setSelectedArea] = useState<any>(null);
+  const [selectedArea, setSelectedArea] = useState<MapFeature | null>(null);
 
-  const handleAreaClick = (feature: any, bounds: any) => {
+  const handleAreaClick = (feature: MapFeature | null, bounds: any) => {
     if (feature === null && bounds === null) {
       setSelectedArea(null);
     } else {
@@ -30,9 +31,6 @@ const PhilippinesMapPage = () => {
         <PhilippinesMap
           onAreaClick={handleAreaClick}
           selectedArea={selectedArea}
-          // You can now add additional layers or custom styles here
-          // additionalLayers={yourAdditionalLayers}
-          // customStyles={yourCustomStyles}
         />
       </div>
     </div>
