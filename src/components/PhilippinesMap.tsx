@@ -147,7 +147,7 @@ const PhilippinesMap = ({ onAreaClick, selectedArea }: PhilippinesMapProps) => {
   }
 
   return (
-    <div className="relative h-[500px] w-full bg-white">
+    <div className="relative h-[800px] w-1/2 bg-white">
       <MapContainer
         center={CENTER}
         zoom={MAP_CONFIG.initialZoom}

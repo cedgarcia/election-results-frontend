@@ -8,7 +8,7 @@ import type { MapFeature } from '@/types/map';
 const PhilippinesMap = dynamic(() => import('@/components/PhilippinesMap'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[500px] w-full items-center justify-center bg-gray-100">
+    <div className="flex h-[800px] w-1/2 items-center justify-center bg-gray-100">
       <div className="text-gray-600">Loading map...</div>
     </div>
   ),

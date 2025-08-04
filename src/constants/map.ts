@@ -16,7 +16,7 @@ export const MAP_CONFIG = {
   minZoom: 5,
   maxZoom: 12,
   detailZoom: 9,
-  animationDuration: 0.8,
+  animationDuration: 0.5,
   padding: [40, 40] as [number, number],
   debounceDelay: 200,
   zoomResetDelay: 1000,
